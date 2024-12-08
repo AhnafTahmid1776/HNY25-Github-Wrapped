@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub wrapped 2024</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        /* General Styling */
+        body {
+            background-color: #000; /* Black background */
+            color: #fff; /* White text */
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1, h3 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Logo */
+        .logo {
+            display: block;
+            margin: 20px auto;
+            width: 100px; /* Logo size */
+            height: auto;
+        }
+
+        /* Summary Section */
+        .summary {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #111; /* Slightly lighter black */
+            border-radius: 10px;
+        }
+
+        .summary-item {
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        /* Split Layout */
+        .split {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .split-left {
+            flex: 1; /* Left side for repositories */
+            overflow-y: auto;
+            max-height: 600px;
+        }
+
+        .split-right {
+            flex: 1; /* Right side for chart */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Repository Cards */
+        .card {
+            background-color: #111; /* Slightly lighter black */
+            border: 1px solid #222;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .card-title, .card-text {
+            color: #fff; /* White text for card content */
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        /* Chart Styling */
+        canvas {
+            max-width: 100%; /* Responsive chart */
+            height: auto;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .split {
+                flex-direction: column; /* Stacks vertically on smaller screens */
+            }
+
+            .split-left, .split-right {
+                max-height: none; /* Allow full height on smaller screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- GitHub Logo -->
+        <div class="text-center">
+            <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub Logo" class="logo">
+        </div>
+
+        <!-- Title -->
+        <h1>GitHub Wrapped 2024</h1>
+
+        <!-- Animation Video -->
+       
+
+        <!-- Summary Section -->
+        <div class="summary">
+            <h3>Summary</h3>
+            <p class="summary-item">Languages Used: <span id="languages-list">Loading...</span></p>
+            <p class="summary-item">Total Stars: <span id="total-stars">Loading...</span></p>
+            <p class="summary-item">Number of Repositories: <span id="repo-count">Loading...</span></p>
+            <p class="summary-item">Open Issues: <span id="total-issues">Loading...</span></p>
+        </div>
+
+        <!-- Split Layout -->
+        <div class="split">
+            <!-- Left Side: Repositories -->
+            <div class="split-left">
+                <div>
+                    {% for repo in repos %}
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ repo['name'] }}</h5>
+                            <p class="card-text">{{ repo['description'] }}</p>
+                            <p class="text-muted">Language: {{ repo['language'] }}</p>
+                            <p class="text-muted">Stars: {{ repo['stargazers_count'] }}</p>
+                            <p class="text-muted">Open Issues: {{ repo['open_issues_count'] }}</p>
+                            <a href="{{ repo['html_url'] }}" target="_blank" class="btn btn-primary">View on GitHub</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Right Side: Pie Chart -->
+            <div class="split-right">
+                <canvas id="languageChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Example Data: Replace with actual data passed from Flask
+        const repos = {{ repos | tojson }};
+        
+        // Calculate summary data
+        const languageCounts = {};
+        let totalStars = 0;
+        let totalIssues = 0;
+
+        repos.forEach(repo => {
+            if (repo.language) {
+                languageCounts[repo.language] = (languageCounts[repo.language] || 0) + 1;
+            }
+            totalStars += repo.stargazers_count;
+            totalIssues += repo.open_issues_count;
+        });
+
+        // Populate summary section
+        document.getElementById('languages-list').innerText = Object.keys(languageCounts).join(', ');
+        document.getElementById('total-stars').innerText = totalStars;
+        document.getElementById('repo-count').innerText = repos.length;
+        document.getElementById('total-issues').innerText = totalIssues;
+
+        // Chart.js Setup
+        const ctx = document.getElementById('languageChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'pie', // Use pie chart for language distribution
+            data: {
+                labels: Object.keys(languageCounts),
+                datasets: [{
+                    data: Object.values(languageCounts),
+                    backgroundColor: [
+                        '#007bff', '#6610f2', '#6f42c1', '#e83e8c',
+                        '#fd7e14', '#ffc107', '#28a745', '#20c997', '#17a2b8'
+                    ],
+                    borderColor: '#000',
+                    borderWidth: 1,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#fff' // White legend text
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
